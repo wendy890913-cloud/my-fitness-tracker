@@ -126,128 +126,137 @@
     
     // --- Data Initialization (Static Workout Plan) ---
     const exercises = [
-        // 核心/功能
+        // 核心/功能 (Crunches) - Index 0
         { 
             part: '核心/功能', 
             name: '卷腹 (Crunches)', 
             sets: '12x3', 
             weight: '自身體重', 
             icon: 'RotateCcw', 
-            instructions: '屈膝，手碰膝。注意：若腰部疼痛，請立即停止，代表動作錯誤。',
+            instructions: '屈膝，手碰膝。核心穩定。注意：若腰部疼痛，請立即停止，會痛代表做錯了。',
             imageUrl: 'https://placehold.co/400x225/2563EB/FFFFFF?text=Crunches+Illustration' 
         },
+        // 核心/功能 (Farmer's Walk) - Index 1
         { 
             part: '核心/功能', 
             name: '農夫走路 (Farmer\'s Walk)', 
             sets: '左右各2趟', 
-            weight: '5kg 或 8kg', 
+            weight: '5/8kg', 
             icon: 'Zap', 
-            instructions: '核心穩定是關鍵！身體絕不能歪斜，靠腹部的力量抗旋轉。不要代償。',
+            instructions: '核心穩定超級重要！身體絕對不可以歪斜，靠腹部的力量抗旋轉。不要代償！！！',
             imageUrl: 'https://placehold.co/400x225/2563EB/FFFFFF?text=Farmer\'s+Walk+Illustration'
         },
         
-        // 胸/上肢
+        // 胸/上肢 (Dumbbell Chest Press) - Index 2
         { 
             part: '胸/上肢', 
             name: '胸推 (Dumbbell Chest Press)', 
             sets: '10x3', 
             weight: '5kg (左右分開)', 
             icon: 'Target', 
-            instructions: '不聳肩，感受胸部發力。手肘不要鎖死。',
+            instructions: '不聳肩，感受胸部發力。手肘不鎖死。起始位置會在胸口旁約為乳頭的位置。',
             imageUrl: 'https://placehold.co/400x225/10B981/FFFFFF?text=Chest+Press+Illustration'
         },
+        // 胸/上肢 (Dumbbell Fly) - Index 3
         { 
             part: '胸/上肢', 
             name: '飛鳥 (Dumbbell Fly)', 
             sets: '10x3', 
             weight: '5kg (左右分開)', 
             icon: 'Armchair', 
-            instructions: '上臂保持水平，不聳肩，強調胸部感受度，速度穩定。',
+            instructions: '上臂保持水平，不聳肩。強調胸部感受度，速度穩定。關節不鎖死。',
             imageUrl: 'https://placehold.co/400x225/10B981/FFFFFF?text=Dumbbell+Fly+Illustration'
         },
         
-        // 肩/上肢 (Shoulder / Arm)
+        // 肩/上肢 (YWT) - Index 4
         { 
             part: '肩/上肢', 
             name: 'YWT', 
-            sets: 'Y(10x1) + WT(10x2)', 
+            sets: 'Y(10x1) + W(10x1) + T(10x1)', 
             weight: '5kg', 
             icon: 'TrendingUp', 
-            instructions: '強調肩胛骨節律和感受度。拉高至下巴左右的高度。',
+            instructions: '強調肩胛骨節律和感受度。動作慢且控制，不要操之過急。',
             imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=YWT+Illustration'
         },
+        // 肩/上肢 (Lat Pulldown) - Index 5
         { 
             part: '肩/上肢', 
             name: '滑輪下拉 (Lat Pulldown)', 
-            sets: '15x3', 
+            sets: '15x2', 
             weight: '10kg', 
             icon: 'Armchair', 
-            instructions: '感受肩胛骨收縮。拉至下巴左右高度。',
+            instructions: '感受肩胛骨收縮。拉高至下巴左右的高度。速度穩定，動作正確性很重要。',
             imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=Lat+Pulldown+Illustration'
         },
+        // 肩/上肢 (Shoulder Press) - Index 6
         { 
             part: '肩/上肢', 
             name: '肩推 (Shoulder Press)', 
-            sets: '15x5(3)', 
+            sets: '10x3', 
             weight: '彈力繩 (Bands)', 
             icon: 'Dumbbell', 
-            instructions: '身體站直，向上推。速度控制：推1回2 (慢速離心)。',
+            instructions: '身體站直，向上推。速度控制：推1回2 (慢速離心)。核心穩定。',
             imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=Shoulder+Press+Illustration'
         },
+        // 肩/上肢 (Biceps Curl) - Index 7
         { 
             part: '肩/上肢', 
             name: '肱二頭肌 (Biceps Curl)', 
-            sets: '12(8)x3', 
+            sets: '8x3', 
             weight: '2kg', 
             icon: 'Dumbbell', 
-            instructions: '動作控制，前臂貼緊身體。',
+            instructions: '動作控制，前臂貼緊身體。速度穩定，關節不鎖死。',
             imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=Biceps+Curl+Illustration'
         },
+        // 肩/上肢 (Triceps Ext.) - Index 8
         { 
             part: '肩/上肢', 
             name: '肱三頭肌 (Triceps Ext.)', 
             sets: '12x3', 
             weight: '2kg', 
             icon: 'Dumbbell', 
-            instructions: '手放頭後面，身體不要歪斜。核心穩定，動作控制。',
+            instructions: '手放頭後面，身體不要歪斜。核心穩定，動作控制，關節不鎖死。',
             imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=Triceps+Ext+Illustration'
         },
         
-        // 腿/下肢
+        // 腿/下肢 (Leg Extension) - Index 9
         { 
             part: '腿/下肢', 
             name: '腿伸 (Leg Extension)', 
-            sets: '15x5', 
+            sets: '15x3', 
             weight: '10kg', 
             icon: 'TrendingUp', 
-            instructions: '膝蓋不鎖死，感受股四頭肌。注意膝蓋的疼痛感和負荷程度。',
+            instructions: '膝蓋不鎖死，感受股四頭肌。注意膝蓋的疼痛感和負荷程度 (例如疼痛感)。',
             imageUrl: 'https://placehold.co/400x225/EF4444/FFFFFF?text=Leg+Extension+Illustration'
         },
+        // 腿/下肢 (Hip 4-way) - Index 10
         { 
             part: '腿/下肢', 
             name: '髖四向 (Hip 4-way)', 
             sets: '10x2', 
             weight: '5kg', 
             icon: 'Anchor', 
-            instructions: '包含外展、內收、屈髖、伸髖。核心穩定超級重要，身體不前傾/後傾/側彎。慢動作，感受度優先。',
+            instructions: '包含外展、內收、屈髖、伸髖。核心穩定超級重要，身體不前傾/後傾/側彎。感受度很重要，動作慢慢做，不要急。',
             imageUrl: 'https://placehold.co/400x225/EF4444/FFFFFF?text=Hip+4-way+Illustration'
         },
+        // 腿/下肢 (Calf Raise) - Index 11
         { 
             part: '腿/下肢', 
             name: '舉腫 (Calf Raise)', 
-            sets: '12x5', 
+            sets: '15x3', 
             weight: '自身體重', 
             icon: 'Zap', 
-            instructions: '速度要慢，不穩可以扶桌子。速度控制：推1回2 (慢速離心)。',
+            instructions: '速度要慢，不穩可以扶桌子。速度控制：推1回2 (慢速離心)。關節不鎖死。',
             imageUrl: 'https://placehold.co/400x225/EF4444/FFFFFF?text=Calf+Raise+Illustration'
         },
+        // 腿/下肢 (Leg Curl) - Index 12
         { 
             part: '腿/下肢', 
             name: '腿勾 (Leg Curl)', 
             sets: '10x3', 
             weight: '10kg (左右分開)', 
             icon: 'FileText', 
-            instructions: '和髖四向相同配置，但是趴在地上，不要拱腰，不要用腰代償。',
+            instructions: '和髖四向相同配置，但是趴在地上。不要拱腰，不要用腰代償。核心穩定。',
             imageUrl: 'https://placehold.co/400x225/EF4444/FFFFFF?text=Leg+Curl+Placeholder'
         },
     ];
