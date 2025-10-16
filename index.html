@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的訓練排程 (離線版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons for aesthetic icons -->
+    <script type="module">
+        import { createIcons, FileText, Share2, AlertTriangle, Armchair, Dumbbell, Zap, TrendingUp, RotateCcw, Target, Anchor } from 'https://cdn.skypack.dev/lucide?dts';
+        createIcons({ icons: { FileText, Share2, AlertTriangle, Armchair, Dumbbell, Zap, TrendingUp, RotateCcw, Target, Anchor } });
+    </script>
+    <style>
+        :root {
+            font-family: 'Inter', sans-serif;
+            --primary-color: #3b82f6; /* Tailwind blue-500 */
+        }
+        body {
+            background-color: #1f2937; /* Dark Gray */
+            color: #f3f4f6; /* Light Gray */
+            overflow: hidden; 
+        }
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .exercise-list {
+            display: flex;
+            overflow-x: scroll;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            flex-grow: 1;
+            padding-bottom: 20px;
+        }
+        .exercise-page {
+            flex: 0 0 100vw;
+            scroll-snap-align: center;
+            padding: 24px 16px;
+            box-sizing: border-box;
+            max-height: 100%;
+            overflow-y: auto;
+        }
+        .exercise-list::-webkit-scrollbar {
+            height: 8px;
+        }
+        .exercise-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="app-container">
+    <!-- Header -->
+    <header class="p-4 bg-gray-800 shadow-lg flex justify-between items-center z-10">
+        <h1 class="text-xl font-bold text-green-400">離線訓練日誌</h1>
+        <div class="flex items-center space-x-3">
+            <button id="share-info" class="p-2 rounded-full hover:bg-gray-700 transition" onclick="showMessageModal('離線模式', '此為離線版本，無雲端分享功能。您的筆記儲存在本機瀏覽器中。')">
+                <i data-lucide="share-2" class="w-5 h-5 text-gray-500"></i>
+            </button>
+            <!-- Auth Status replaced by Offline Status -->
+            <div id="auth-status" class="text-xs px-2 py-1 bg-green-700 rounded-full">
+                離線模式
+            </div>
+        </div>
+    </header>
+
+    <!-- Swipable Exercise List -->
+    <div id="exercise-list" class="exercise-list">
+        <!-- Exercise pages will be injected here by JavaScript -->
+        <div id="loading-spinner" class="exercise-page flex items-center justify-center">
+            <svg class="animate-spin -ml-1 mr-3 h-8 w-8 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-lg text-green-400">載入訓練資料中...</span>
+        </div>
+    </div>
+
+    <!-- Page Indicator -->
+    <div id="page-indicator" class="p-3 bg-gray-800 flex justify-center space-x-1">
+        <!-- Dots will be injected here -->
+    </div>
+
+    <!-- Generic Message/Alert Modal -->
+    <div id="message-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+        <div class="bg-gray-700 p-6 rounded-xl shadow-2xl max-w-sm w-full m-4">
+            <h3 id="message-title" class="text-xl font-bold mb-3 text-green-400">提示</h3>
+            <p id="message-content" class="text-gray-300 mb-4"></p>
+            <button onclick="closeMessageModal()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition duration-150">確定</button>
+        </div>
+    </div>
+</div>
+
+<!-- Core Logic Scripts (LocalStorage Version) -->
+<script type="text/javascript">
+    // --- Utility Functions ---
+
+    /** Displays a custom modal message instead of using alert() */
+    window.showMessageModal = (title, content) => {
+        document.getElementById('message-title').textContent = title;
+        document.getElementById('message-content').textContent = content;
+        document.getElementById('message-modal').classList.remove('hidden');
+        document.getElementById('message-modal').classList.add('flex');
+    };
+
+    /** Closes the custom modal message */
+    window.closeMessageModal = () => {
+        document.getElementById('message-modal').classList.add('hidden');
+        document.getElementById('message-modal').classList.remove('flex');
+    };
+
+    // Helper to map part names to Lucide icons
+    const getIcon = (part) => {
+        switch (part) {
+            case '肩/上肢': return 'Armchair';
+            case '胸/上肢': return 'Target';
+            case '腿/下肢': return 'Dumbbell';
+            case '核心/功能': return 'Anchor';
+            default: return 'TrendingUp';
+        }
+    };
+    
+    // --- Data Initialization (Static Workout Plan) ---
+    const exercises = [
+        // 核心/功能
+        { 
+            part: '核心/功能', 
+            name: '卷腹 (Crunches)', 
+            sets: '12x3', 
+            weight: '自身體重', 
+            icon: 'RotateCcw', 
+            instructions: '屈膝，手碰膝。注意：若腰部疼痛，請立即停止，代表動作錯誤。',
+            imageUrl: 'https://placehold.co/400x225/2563EB/FFFFFF?text=Crunches+Illustration' 
+        },
+        { 
+            part: '核心/功能', 
+            name: '農夫走路 (Farmer\'s Walk)', 
+            sets: '左右各2趟', 
+            weight: '5kg 或 8kg', 
+            icon: 'Zap', 
+            instructions: '核心穩定是關鍵！身體絕不能歪斜，靠腹部的力量抗旋轉。不要代償。',
+            imageUrl: 'https://placehold.co/400x225/2563EB/FFFFFF?text=Farmer\'s+Walk+Illustration'
+        },
+        
+        // 胸/上肢
+        { 
+            part: '胸/上肢', 
+            name: '胸推 (Dumbbell Chest Press)', 
+            sets: '10x3', 
+            weight: '5kg (左右分開)', 
+            icon: 'Target', 
+            instructions: '不聳肩，感受胸部發力。手肘不要鎖死。',
+            imageUrl: 'https://placehold.co/400x225/10B981/FFFFFF?text=Chest+Press+Illustration'
+        },
+        { 
+            part: '胸/上肢', 
+            name: '飛鳥 (Dumbbell Fly)', 
+            sets: '10x3', 
+            weight: '5kg (左右分開)', 
+            icon: 'Armchair', 
+            instructions: '上臂保持水平，不聳肩，強調胸部感受度，速度穩定。',
+            imageUrl: 'https://placehold.co/400x225/10B981/FFFFFF?text=Dumbbell+Fly+Illustration'
+        },
+        
+        // 肩/上肢 (Shoulder / Arm)
+        { 
+            part: '肩/上肢', 
+            name: 'YWT', 
+            sets: 'Y(10x1) + WT(10x2)', 
+            weight: '5kg', 
+            icon: 'TrendingUp', 
+            instructions: '強調肩胛骨節律和感受度。拉高至下巴左右的高度。',
+            imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=YWT+Illustration'
+        },
+        { 
+            part: '肩/上肢', 
+            name: '滑輪下拉 (Lat Pulldown)', 
+            sets: '15x3', 
+            weight: '10kg', 
+            icon: 'Armchair', 
+            instructions: '感受肩胛骨收縮。拉至下巴左右高度。',
+            imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=Lat+Pulldown+Illustration'
+        },
+        { 
+            part: '肩/上肢', 
+            name: '肩推 (Shoulder Press)', 
+            sets: '15x5(3)', 
+            weight: '彈力繩 (Bands)', 
+            icon: 'Dumbbell', 
+            instructions: '身體站直，向上推。速度控制：推1回2 (慢速離心)。',
+            imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=Shoulder+Press+Illustration'
+        },
+        { 
+            part: '肩/上肢', 
+            name: '肱二頭肌 (Biceps Curl)', 
+            sets: '12(8)x3', 
+            weight: '2kg', 
+            icon: 'Dumbbell', 
+            instructions: '動作控制，前臂貼緊身體。',
+            imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=Biceps+Curl+Illustration'
+        },
+        { 
+            part: '肩/上肢', 
+            name: '肱三頭肌 (Triceps Ext.)', 
+            sets: '12x3', 
+            weight: '2kg', 
+            icon: 'Dumbbell', 
+            instructions: '手放頭後面，身體不要歪斜。核心穩定，動作控制。',
+            imageUrl: 'https://placehold.co/400x225/F59E0B/FFFFFF?text=Triceps+Ext+Illustration'
+        },
+        
+        // 腿/下肢
+        { 
+            part: '腿/下肢', 
+            name: '腿伸 (Leg Extension)', 
+            sets: '15x5', 
+            weight: '10kg', 
+            icon: 'TrendingUp', 
+            instructions: '膝蓋不鎖死，感受股四頭肌。注意膝蓋的疼痛感和負荷程度。',
+            imageUrl: 'https://placehold.co/400x225/EF4444/FFFFFF?text=Leg+Extension+Illustration'
+        },
+        { 
+            part: '腿/下肢', 
+            name: '髖四向 (Hip 4-way)', 
+            sets: '10x2', 
+            weight: '5kg', 
+            icon: 'Anchor', 
+            instructions: '包含外展、內收、屈髖、伸髖。核心穩定超級重要，身體不前傾/後傾/側彎。慢動作，感受度優先。',
+            imageUrl: 'https://placehold.co/400x225/EF4444/FFFFFF?text=Hip+4-way+Illustration'
+        },
+        { 
+            part: '腿/下肢', 
+            name: '舉腫 (Calf Raise)', 
+            sets: '12x5', 
+            weight: '自身體重', 
+            icon: 'Zap', 
+            instructions: '速度要慢，不穩可以扶桌子。速度控制：推1回2 (慢速離心)。',
+            imageUrl: 'https://placehold.co/400x225/EF4444/FFFFFF?text=Calf+Raise+Illustration'
+        },
+        { 
+            part: '腿/下肢', 
+            name: '腿勾 (Leg Curl)', 
+            sets: '10x3', 
+            weight: '10kg (左右分開)', 
+            icon: 'FileText', 
+            instructions: '和髖四向相同配置，但是趴在地上，不要拱腰，不要用腰代償。',
+            imageUrl: 'https://placehold.co/400x225/EF4444/FFFFFF?text=Leg+Curl+Placeholder'
+        },
+    ];
+    
+    // Global state for local notes
+    let currentNotes = {};
+
+    // --- Local Storage Logic ---
+
+    /** Loads all notes from localStorage */
+    function loadLocalNotes() {
+        exercises.forEach((_, index) => {
+            const key = `training_note_${index}`;
+            const note = localStorage.getItem(key);
+            if (note) {
+                currentNotes[index] = note;
+            }
+        });
+    }
+
+    /** Saves a specific note to localStorage */
+    function saveUserNoteLocal(index, noteText) {
+        const key = `training_note_${index}`;
+        try {
+            localStorage.setItem(key, noteText);
+            console.log(`Local note for exercise ${index} saved.`);
+        } catch (e) {
+            console.error("Error saving local note:", e);
+            showMessageModal('儲存失敗', '本地儲存空間不足或您的瀏覽器不允許使用 localStorage。');
+        }
+    }
+
+    // --- Rendering and Interaction Logic ---
+
+    /** Renders the swipable interface based on the static exercise data. */
+    function renderWorkoutInterface() {
+        const listEl = document.getElementById('exercise-list');
+        const indicatorEl = document.getElementById('page-indicator');
+        listEl.innerHTML = '';
+        indicatorEl.innerHTML = '';
+
+        if (exercises.length === 0) {
+            listEl.innerHTML = '<div class="exercise-page text-center text-lg text-red-400">無法載入訓練資料。</div>';
+            return;
+        }
+
+        exercises.forEach((ex, index) => {
+            const pageEl = document.createElement('div');
+            pageEl.className = 'exercise-page flex flex-col space-y-4';
+            pageEl.id = `exercise-page-${index}`;
+
+            const iconName = getIcon(ex.part);
+            const iconSize = 'w-10 h-10';
+            
+            // Image/Illustration HTML Generation
+            const imageHtml = ex.imageUrl 
+                ? `<div class="mt-4 rounded-xl overflow-hidden shadow-lg border border-gray-600 aspect-video">
+                      <img src="${ex.imageUrl}" 
+                           alt="${ex.name} 動作示意圖" 
+                           onerror="this.onerror=null;this.src='https://placehold.co/400x225/808080/FFFFFF?text=Image+Load+Fail'; this.parentElement.style.backgroundColor='#4B5563'; this.parentElement.classList.add('flex', 'items-center', 'justify-center');"
+                           class="w-full h-full object-cover"/>
+                   </div>`
+                : `<div class="mt-4 bg-gray-800 h-28 flex items-center justify-center rounded-xl border border-gray-600">
+                      <span class="text-gray-500 italic">動作示意圖待補 (${ex.name})</span>
+                   </div>`;
+
+            // Exercise Card Content
+            pageEl.innerHTML = `
+                <div class="bg-gray-700 p-6 rounded-2xl shadow-xl flex-shrink-0">
+                    <div class="flex items-center space-x-4 mb-3">
+                        <!-- Icons imported via module script in head -->
+                        <i data-lucide="${iconName}" class="${iconSize} text-green-400"></i>
+                        <h2 class="text-2xl font-extrabold text-white">${index + 1}. ${ex.name}</h2>
+                    </div>
+                    
+                    <div class="mt-4 p-4 bg-gray-600 rounded-xl space-y-2 text-sm">
+                        <div class="flex justify-between font-semibold">
+                            <span class="text-gray-300">部位:</span>
+                            <span class="text-green-300">${ex.part}</span>
+                        </div>
+                        <div class="flex justify-between font-semibold">
+                            <span class="text-gray-300">組數/次數:</span>
+                            <span class="text-yellow-300">${ex.sets}</span>
+                        </div>
+                        <div class="flex justify-between font-semibold">
+                            <span class="text-gray-300">重量/強度:</span>
+                            <span class="text-yellow-300">${ex.weight}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 border-l-4 border-green-400 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-200">關鍵動作指令 (Key Cues)</h3>
+                        <p class="text-sm text-gray-400 mt-1">${ex.instructions}</p>
+                    </div>
+
+                    <!-- Action Illustration Area -->
+                    ${imageHtml}
+                </div>
+
+                <!-- Notes/Logging Area -->
+                <div class="flex-grow bg-gray-700 p-6 rounded-2xl shadow-xl mt-4 flex flex-col">
+                    <h3 class="text-lg font-bold mb-2 text-green-300 flex items-center">
+                        <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> 個人訓練日誌 (本機儲存)
+                    </h3>
+                    <textarea 
+                        id="notes-textarea-${index}"
+                        class="flex-grow w-full p-3 bg-gray-800 rounded-lg text-gray-200 border-none resize-none focus:ring-2 focus:ring-green-500 focus:outline-none placeholder-gray-500 text-sm"
+                        placeholder="在此記錄今天的表現、感受度、疼痛或新重量... (會自動儲存到本機)"
+                        rows="5"
+                    >${currentNotes[index] || ''}</textarea>
+                    <div class="text-right text-xs text-gray-400 mt-2">筆記會自動儲存到您的瀏覽器 (僅此裝置可見)</div>
+                </div>
+            `;
+            listEl.appendChild(pageEl);
+
+            // Create page indicator dot
+            const dotEl = document.createElement('div');
+            dotEl.id = `dot-${index}`;
+            dotEl.className = 'w-2 h-2 rounded-full bg-gray-600 transition-colors duration-200';
+            dotEl.onclick = () => scrollToPage(index);
+            indicatorEl.appendChild(dotEl);
+            
+            // Attach auto-save listener to the textarea using local storage function
+            const textarea = pageEl.querySelector(`#notes-textarea-${index}`);
+            if (textarea) {
+                textarea.addEventListener('input', debounce(() => saveUserNoteLocal(index, textarea.value), 1000));
+            }
+        });
+
+        // Set initial active page
+        updatePageIndicator(0);
+        listEl.addEventListener('scroll', handleScroll);
+        
+        // Finalize icons (must be called after DOM insertion)
+        if (typeof createIcons !== 'undefined') {
+             createIcons({ icons: { FileText, Share2, AlertTriangle, Armchair, Dumbbell, Zap, TrendingUp, RotateCcw, Target, Anchor }, attrs: { stroke: 'currentColor', fill: 'none', 'stroke-width': 2 } });
+        }
+    }
+
+    let currentPage = 0;
+    
+    function scrollToPage(index) {
+        const listEl = document.getElementById('exercise-list');
+        const pageEl = document.getElementById(`exercise-page-${index}`);
+        if (pageEl) {
+            listEl.scrollTo({ left: pageEl.offsetLeft, behavior: 'smooth' });
+            currentPage = index;
+            updatePageIndicator(index);
+        }
+    }
+
+    function updatePageIndicator(index) {
+        exercises.forEach((_, i) => {
+            const dot = document.getElementById(`dot-${i}`);
+            if (dot) {
+                dot.classList.remove('bg-green-400');
+                dot.classList.add('bg-gray-600');
+            }
+        });
+        const activeDot = document.getElementById(`dot-${index}`);
+        if (activeDot) {
+            activeDot.classList.remove('bg-gray-600');
+            activeDot.classList.add('bg-green-400');
+        }
+    }
+
+    function handleScroll() {
+        const listEl = document.getElementById('exercise-list');
+        const scrollLeft = listEl.scrollLeft;
+        const width = listEl.clientWidth;
+        if (width === 0) return;
+
+        const newPage = Math.round(scrollLeft / width);
+
+        if (newPage !== currentPage) {
+            currentPage = newPage;
+            updatePageIndicator(currentPage);
+        }
+    }
+
+    // --- Debounce Utility for Auto-Save ---
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            const later = function() {
+                timeout = null;
+                func.apply(context, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // --- Startup ---
+    window.onload = function() {
+        loadLocalNotes(); // Load notes from browser
+        renderWorkoutInterface(); // Render the application
+    }
+</script>
